@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import type { CarDetails, ChatMessage, MediaData } from '../types';
 import ChatMessageBubble from './ChatMessage';
@@ -10,6 +9,8 @@ interface ChatInterfaceProps {
   isLoading: boolean;
   error: string | null;
   onSendMessage: (message: string, media?: MediaData) => void;
+  onNewDiagnosis: () => void;
+  onOpenSettings: () => void;
 }
 
 const SendIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -49,8 +50,14 @@ const XCircleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
+const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
+        <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 5.85c-.09.55-.443.99-1.002 1.122L5.85 7.15c-.954.22-1.523.996-1.523 1.942V9.45l.138.462c.15.504.536.882 1.075 1.018l2.12.53c.594.148 1.02.633 1.02 1.258v2.094l-.328.247c-.52.39-1.166.39-1.686 0l-1.49-1.118a1.875 1.875 0 0 0-2.642 2.642l1.118 1.49c.39.52.39 1.166 0 1.686l-.247.328v2.094c0 .625.426 1.11 1.02 1.258l2.12.53c.539.136.925.514 1.075 1.018l.138.462v.358c0 .946.569 1.722 1.523 1.942l2.199.178c.559.045.99.497 1.122 1.002l.178 2.199c.151.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.199c.132-.505.572-.957 1.122-1.002l2.199-.178c.954-.22 1.523-.996 1.523-1.942v-.358l.138-.462c.15-.504.536-.882 1.075-1.018l2.12-.53c.594-.148 1.02-.633 1.02-1.258V9.816l-.328-.247c-.52-.39-1.166-.39-1.686 0l-1.49 1.118a1.875 1.875 0 0 0-2.642-2.642l1.118-1.49c.39-.52.39-1.166 0-1.686l-.247-.328V3.816c0-.625-.426-1.11-1.02-1.258l-2.12-.53c-.539-.136-.925-.514-1.075-1.018L13.95 2.55v-.358c0-.946-.569-1.722-1.523-1.942L10.228.07c-.559-.045-.99-.497-1.122-1.002L8.928 1.267C8.777 2.171 7.995 2.834 7.078 2.834H5.234a1.875 1.875 0 0 0-1.875 1.875v1.844c0 .917.663 1.699 1.567 1.85l2.199.178c.505.04.957.48.99.99l.178 2.199c.151.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.199c.033-.51.485-.95.99-.99l2.199-.178c.904-.07 1.567-.852 1.567-1.85v-1.844a1.875 1.875 0 0 0-1.875-1.875h-1.844c-.917 0-1.699-.663-1.85-1.567l-.178-2.199c-.132-.505-.572-.957-1.122-1.002L8.928 3.07c-.954-.22-1.523-.996-1.523-1.942V.772A1.875 1.875 0 0 0 5.234 2.25H3.39c-.917 0-1.699.663-1.85 1.567L1.362 5.85c-.09.55-.443.99-1.002 1.122L.16 7.15c-.954.22-1.523.996-1.523 1.942V9.45l.138.462c.15.504.536.882 1.075 1.018l2.12.53c.594.148 1.02.633 1.02 1.258v2.094l-.328.247c-.52.39-1.166.39-1.686 0l-1.49-1.118a1.875 1.875 0 0 0-2.642 2.642l1.118 1.49c.39.52.39 1.166 0 1.686l-.247.328v2.094c0 .625.426 1.11 1.02 1.258l2.12.53c.539.136.925.514 1.075 1.018l.138.462v.358c0 .946.569 1.722 1.523 1.942l2.199.178c.559.045.99.497 1.122 1.002l.178 2.199c.151.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.199c.132-.505.572-.957 1.122-1.002l2.199-.178c.954-.22 1.523-.996 1.523-1.942v-.358l.138-.462c.15-.504.536-.882 1.075-1.018l2.12-.53c.594-.148 1.02-.633 1.02-1.258V9.816l-.328-.247c-.52-.39-1.166-.39-1.686 0l-1.49 1.118a1.875 1.875 0 0 0-2.642-2.642l1.118-1.49c.39-.52.39-1.166 0-1.686l-.247-.328V3.816c0-.625-.426-1.11-1.02-1.258l-2.12-.53c-.539-.136-.925-.514-1.075-1.018L13.95 2.55v-.358c0-.946-.569-1.722-1.523-1.942L10.228.07c-.559-.045-.99-.497-1.122-1.002L8.928 1.267C8.777 2.171 7.995 2.834 7.078 2.834H5.234a1.875 1.875 0 0 0-1.875 1.875v1.844c0 .917.663 1.699 1.567 1.85l2.199.178c.505.04.957.48.99.99l.178 2.199c.151.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.199c.033-.51.485-.95.99-.99l2.199-.178c.904-.07 1.567-.852 1.567-1.85v-1.844A1.875 1.875 0 0 0 18.766 6h-1.844c-.917 0-1.699-.663-1.85-1.567l-.178-2.199c-.132-.505-.572-.957-1.122-1.002L11.572.07c-.954-.22-1.523-.996-1.523-1.942V-2.23A1.875 1.875 0 0 0 7.922.25H6.078Z" clipRule="evenodd" />
+    </svg>
+);
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ carDetails, chatHistory, isLoading, error, onSendMessage }) => {
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ carDetails, chatHistory, isLoading, error, onSendMessage, onNewDiagnosis, onOpenSettings }) => {
   const [input, setInput] = useState('');
   const [media, setMedia] = useState<{file: File, preview: string} | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -60,6 +67,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ carDetails, chatHistory, 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const hasShownHistoryMessage = useRef(false);
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -68,6 +77,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ carDetails, chatHistory, 
   useEffect(() => {
     scrollToBottom();
   }, [chatHistory, isLoading]);
+
+  useEffect(() => {
+    // This effect runs only once on mount to check if we should show the history message.
+    if (chatHistory.length > 1) {
+      hasShownHistoryMessage.current = true;
+    }
+  }, []); // Empty dependency array ensures it runs only once.
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -161,30 +177,52 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ carDetails, chatHistory, 
   
   const handleSuggestionClick = () => {
     const maintenancePrompt = `Based on my car's details (${carDetails.year} ${carDetails.make} ${carDetails.model} with ${carDetails.odometer} KM), what are some common or upcoming maintenance tasks I should be aware of? Please list a few key items with brief explanations and organize them clearly.`;
-    onSendMessage(maintenancePrompt);
+    onSendMessage(maintenancePrompt, undefined);
   };
 
   return (
     <div className="flex flex-col h-full">
-      <header className="bg-slate-800/80 backdrop-blur-sm p-4 border-b border-slate-700 shadow-md sticky top-0 z-10">
+      <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm p-4 border-b border-slate-200 dark:border-slate-700 shadow-md sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-            <div>
-                <h1 className="text-xl font-bold text-slate-100">Virtual Mechanic</h1>
-                <p className="text-sm text-amber-400">{`${carDetails.year} ${carDetails.make} ${carDetails.model} (${carDetails.fuelType}) - ${carDetails.odometer} KM`}</p>
+            <button
+                onClick={onOpenSettings}
+                className="p-2 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors"
+                aria-label="Open settings"
+            >
+                <SettingsIcon className="w-6 h-6" />
+            </button>
+            <div className="text-center">
+                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Virtual Mechanic</h1>
+                <p className="text-sm text-amber-500 dark:text-amber-400">{`${carDetails.year} ${carDetails.make} ${carDetails.model} (${carDetails.fuelType}) - ${carDetails.odometer} KM`}</p>
             </div>
+            <button
+                onClick={onNewDiagnosis}
+                className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+            >
+                New Diagnosis
+            </button>
         </div>
       </header>
 
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-4xl mx-auto space-y-6">
+          {hasShownHistoryMessage.current && (
+              <div className="flex items-center text-center my-4" aria-label="Chat history restored">
+                <div className="flex-grow border-t border-slate-300 dark:border-slate-700"></div>
+                <span className="flex-shrink mx-4 text-xs font-medium text-slate-500 dark:text-slate-500 uppercase">
+                  Previous session restored
+                </span>
+                <div className="flex-grow border-t border-slate-300 dark:border-slate-700"></div>
+              </div>
+          )}
           {chatHistory.map((msg, index) => (
-            <ChatMessageBubble key={index} message={msg} />
+            <ChatMessageBubble key={index} message={msg} onSendMessage={onSendMessage} />
           ))}
-          {isLoading && chatHistory[chatHistory.length - 1]?.author === 'user' && (
+          {isLoading && chatHistory.length > 0 && chatHistory[chatHistory.length - 1]?.author === 'user' && (
              <div className="flex justify-start">
                 <div className="flex items-center space-x-2">
                     <LoadingSpinner />
-                    <span className="text-slate-400">Mechanic is thinking...</span>
+                    <span className="text-slate-500 dark:text-slate-400">Mechanic is thinking...</span>
                 </div>
              </div>
           )}
@@ -192,15 +230,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ carDetails, chatHistory, 
         </div>
       </main>
 
-      <footer className="bg-slate-800 p-4 border-t border-slate-700 sticky bottom-0">
+      <footer className="bg-white dark:bg-slate-800 p-4 border-t border-slate-200 dark:border-slate-700 sticky bottom-0">
         <div className="max-w-4xl mx-auto">
-          {error && <p className="text-red-400 text-sm mb-2 text-center">{error}</p>}
+          {error && <p className="text-red-500 dark:text-red-400 text-sm mb-2 text-center">{error}</p>}
           
           {chatHistory.length <= 2 && !isLoading && (
             <div className="mb-3 text-center">
               <button
                 onClick={handleSuggestionClick}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-300 bg-slate-700/50 border border-slate-600 rounded-full hover:bg-slate-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-600 dark:text-amber-300 bg-amber-100/50 dark:bg-slate-700/50 border border-amber-200 dark:border-slate-600 rounded-full hover:bg-amber-100 dark:hover:bg-slate-700 transition-colors"
               >
                 <LightbulbIcon className="w-4 h-4" />
                 Suggest Common Maintenance Tasks
@@ -209,10 +247,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ carDetails, chatHistory, 
           )}
 
           {(media || audioBlob) && (
-            <div className="mb-3 p-3 bg-slate-700/50 border border-slate-600 rounded-lg relative">
+            <div className="mb-3 p-3 bg-slate-200/50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-lg relative">
               {media && <img src={media.preview} alt="Preview" className="max-h-24 rounded-md"/>}
               {audioBlob && <audio controls src={URL.createObjectURL(audioBlob)} className="w-full"></audio>}
-              <button onClick={clearMedia} className="absolute -top-2 -right-2 bg-slate-600 rounded-full text-slate-200 hover:bg-slate-500">
+              <button onClick={clearMedia} className="absolute -top-2 -right-2 bg-slate-400 dark:bg-slate-600 rounded-full text-white dark:text-slate-200 hover:bg-slate-500 dark:hover:bg-slate-500">
                 <XCircleIcon className="w-6 h-6"/>
               </button>
             </div>
@@ -220,10 +258,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ carDetails, chatHistory, 
           
           <form onSubmit={handleSubmit} className="flex items-center space-x-2 md:space-x-4">
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" hidden/>
-            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isLoading || isRecording} className="p-3 text-slate-400 hover:text-amber-400 transition-colors disabled:text-slate-600 disabled:cursor-not-allowed">
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isLoading || isRecording} className="p-3 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors disabled:text-slate-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed">
                 <PaperclipIcon className="w-6 h-6"/>
             </button>
-            <button type="button" onClick={isRecording ? stopRecording : startRecording} disabled={isLoading} className={`p-3 transition-colors disabled:text-slate-600 disabled:cursor-not-allowed ${isRecording ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-amber-400'}`}>
+            <button type="button" onClick={isRecording ? stopRecording : startRecording} disabled={isLoading} className={`p-3 transition-colors disabled:text-slate-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed ${isRecording ? 'text-red-500 animate-pulse' : 'text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400'}`}>
                 {isRecording ? <StopIcon className="w-6 h-6"/> : <MicIcon className="w-6 h-6"/>}
             </button>
 
@@ -232,13 +270,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ carDetails, chatHistory, 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask a question or add a description..."
-              className="flex-1 w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-full text-slate-100 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+              className="flex-1 w-full px-4 py-3 bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-full text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
               disabled={isLoading || isRecording}
             />
             <button
               type="submit"
               disabled={isLoading || isRecording || (!input.trim() && !media && !audioBlob)}
-              className="bg-amber-500 text-slate-900 p-3 rounded-full hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-amber-500 transition-all duration-300 disabled:bg-slate-600 disabled:cursor-not-allowed"
+              className="bg-amber-500 text-slate-900 p-3 rounded-full hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-800 focus:ring-amber-500 transition-all duration-300 disabled:bg-slate-300 dark:disabled:bg-slate-600 disabled:cursor-not-allowed"
             >
               <SendIcon className="w-6 h-6" />
             </button>

@@ -1,4 +1,3 @@
-
 import { GroundingChunk } from "@google/genai";
 
 export interface CarDetails {
@@ -26,6 +25,24 @@ export interface ChatMessage {
   sources?: GroundingChunk[];
   media?: MediaData;
 }
+
+// Defines a complete, self-contained chat session
+export interface ChatSession {
+  id: string; // Unique ID, e.g., a timestamp
+  carDetails: CarDetails;
+  chatHistory: ChatMessage[];
+  lastUpdated: number; // Timestamp for sorting
+}
+
+// App personalization settings
+export type Theme = 'light' | 'dark' | 'system';
+export type FontSize = 'text-sm' | 'text-base' | 'text-lg';
+
+export interface Settings {
+    theme: Theme;
+    fontSize: FontSize;
+}
+
 
 // Defines the structure for our cascading dropdown data
 export interface CarData {

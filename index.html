@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -8,21 +7,44 @@
     <title>Virtual Mechanic AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      /* Custom scrollbar for a more modern look */
+      /* Custom scrollbar with CSS variables for theming */
+      :root {
+        --scrollbar-track: #e2e8f0; /* slate-200 */
+        --scrollbar-thumb: #94a3b8; /* slate-400 */
+        --scrollbar-thumb-hover: #64748b; /* slate-500 */
+        color-scheme: light;
+      }
+      html.dark {
+        --scrollbar-track: #1e293b; /* slate-800 */
+        --scrollbar-thumb: #475569; /* slate-600 */
+        --scrollbar-thumb-hover: #64748b; /* slate-500 */
+        color-scheme: dark;
+      }
       ::-webkit-scrollbar {
         width: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #1e293b; /* slate-800 */
+        background: var(--scrollbar-track);
       }
       ::-webkit-scrollbar-thumb {
-        background: #475569; /* slate-600 */
+        background: var(--scrollbar-thumb);
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #64748b; /* slate-500 */
+        background: var(--scrollbar-thumb-hover);
       }
     </style>
+    <script>
+      // Prevents Flash of Unstyled Content (FOUC) for dark mode
+      (function() {
+        const theme = localStorage.getItem('virtualMechanicTheme') || 'system';
+        const fontSize = localStorage.getItem('virtualMechanicFontSize') || 'text-base';
+        if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+        document.documentElement.classList.add(fontSize);
+      })();
+    </script>
   <script type="importmap">
 {
   "imports": {
@@ -33,9 +55,8 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-900">
+  <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
