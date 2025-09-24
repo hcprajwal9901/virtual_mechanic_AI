@@ -1,0 +1,8 @@
+
+{
+  "name": "Virtual Mechanic AI",
+  "description": "An AI-powered assistant for DIY car diagnosis, repair, and maintenance, specializing in Indian cars. Get step-by-step guides, troubleshooting tips, and safety advice.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
