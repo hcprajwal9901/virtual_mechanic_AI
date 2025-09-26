@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { CarDetails } from '../types';
 import { carData } from '../data/carData';
 
@@ -16,7 +16,7 @@ const WrenchIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 
 const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
-        <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 5.85c-.09.55-.443.99-1.002 1.122L5.85 7.15c-.954.22-1.523.996-1.523 1.942V9.45l.138.462c.15.504.536.882 1.075 1.018l2.12.53c.594.148 1.02.633 1.02 1.258v2.094l-.328.247c-.52.39-1.166.39-1.686 0l-1.49-1.118a1.875 1.875 0 0 0-2.642 2.642l1.118 1.49c.39.52.39 1.166 0 1.686l-.247.328v2.094c0 .625.426 1.11 1.02 1.258l2.12.53c.539.136.925.514 1.075 1.018l.138.462v.358c0 .946.569 1.722 1.523 1.942l2.199.178c.559.045.99.497 1.122 1.002l.178 2.199c.151.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.199c.132-.505.572-.957 1.122-1.002l2.199-.178c.954-.22 1.523-.996 1.523-1.942v-.358l.138-.462c.15-.504.536-.882 1.075-1.018l2.12-.53c.594-.148 1.02-.633 1.02-1.258V9.816l-.328-.247c-.52-.39-1.166-.39-1.686 0l-1.49 1.118a1.875 1.875 0 0 0-2.642-2.642l1.118-1.49c.39-.52.39-1.166 0-1.686l-.247-.328V3.816c0-.625-.426-1.11-1.02-1.258l-2.12-.53c-.539-.136-.925-.514-1.075-1.018L13.95 2.55v-.358c0-.946-.569-1.722-1.523-1.942L10.228.07c-.559-.045-.99-.497-1.122-1.002L8.928 1.267C8.777 2.171 7.995 2.834 7.078 2.834H5.234a1.875 1.875 0 0 0-1.875 1.875v1.844c0 .917.663 1.699 1.567 1.85l2.199.178c.505.04.957.48.99.99l.178 2.199c.151.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.199c.033-.51.485-.95.99-.99l2.199-.178c.904-.07 1.567-.852 1.567-1.85v-1.844a1.875 1.875 0 0 0-1.875-1.875h-1.844c-.917 0-1.699-.663-1.85-1.567l-.178-2.199c-.132-.505-.572-.957-1.122-1.002L8.928 3.07c-.954-.22-1.523-.996-1.523-1.942V.772A1.875 1.875 0 0 0 5.234 2.25H3.39c-.917 0-1.699.663-1.85 1.567L1.362 5.85c-.09.55-.443.99-1.002 1.122L.16 7.15c-.954.22-1.523.996-1.523 1.942V9.45l.138.462c.15.504.536.882 1.075 1.018l2.12.53c.594.148 1.02.633 1.02 1.258v2.094l-.328.247c-.52.39-1.166.39-1.686 0l-1.49-1.118a1.875 1.875 0 0 0-2.642 2.642l1.118 1.49c.39.52.39 1.166 0 1.686l-.247.328v2.094c0 .625.426 1.11 1.02 1.258l2.12.53c.539.136.925.514 1.075 1.018l.138.462v.358c0 .946.569 1.722 1.523 1.942l2.199.178c.559.045.99.497 1.122 1.002l.178 2.199c.151.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.199c.132-.505.572-.957 1.122-1.002l2.199-.178c.954-.22 1.523-.996 1.523-1.942v-.358l.138-.462c.15-.504.536-.882 1.075-1.018l2.12-.53c.594-.148 1.02-.633 1.02-1.258V9.816l-.328-.247c-.52-.39-1.166-.39-1.686 0l-1.49 1.118a1.875 1.875 0 0 0-2.642-2.642l1.118-1.49c.39-.52.39-1.166 0-1.686l-.247-.328V3.816c0-.625-.426-1.11-1.02-1.258l-2.12-.53c-.539-.136-.925-.514-1.075-1.018L13.95 2.55v-.358c0-.946-.569-1.722-1.523-1.942L10.228.07c-.559-.045-.99-.497-1.122-1.002L8.928 1.267C8.777 2.171 7.995 2.834 7.078 2.834H5.234a1.875 1.875 0 0 0-1.875 1.875v1.844c0 .917.663 1.699 1.567 1.85l2.199.178c.505.04.957.48.99.99l.178 2.199c.151.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.199c.033-.51.485-.95.99-.99l2.199-.178c.904-.07 1.567-.852 1.567-1.85v-1.844A1.875 1.875 0 0 0 18.766 6h-1.844c-.917 0-1.699-.663-1.85-1.567l-.178-2.199c-.132-.505-.572-.957-1.122-1.002L11.572.07c-.954-.22-1.523-.996-1.523-1.942V-2.23A1.875 1.875 0 0 0 7.922.25H6.078Z" clipRule="evenodd" />
+      <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.542a.5.5 0 01-.636.444l-1.473-.42a1.875 1.875 0 00-2.165 1.405l-.662 2.93a.5.5 0 01-.421.444l-1.542.385a1.875 1.875 0 00-1.405 2.165l.42 1.473a.5.5 0 01-.444.636l-.385 1.542a1.875 1.875 0 001.405 2.165l2.93.662a.5.5 0 01.444.421l.385 1.542a1.875 1.875 0 002.165 1.405l1.473-.42a.5.5 0 01.636.444l.42 1.473a1.875 1.875 0 002.165-1.405l.662-2.93a.5.5 0 01.421-.444l1.542-.385a1.875 1.875 0 001.405-2.165l-.42-1.473a.5.5 0 01.444-.636l.385-1.542a1.875 1.875 0 00-1.405-2.165l-2.93-.662a.5.5 0 01-.444-.421l-.385-1.542a1.875 1.875 0 00-2.165-1.405l-1.473.42a.5.5 0 01-.636-.444A1.875 1.875 0 0011.078 2.25zM12 8.25a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5z" clipRule="evenodd" />
     </svg>
 );
 
@@ -27,42 +27,64 @@ const CarDetailsForm: React.FC<CarDetailsFormProps> = ({ onSubmit, onOpenSetting
   const [year, setYear] = useState('');
   const [odometer, setOdometer] = useState('');
   const [fuelType, setFuelType] = useState('');
+  const [yearError, setYearError] = useState('');
   
   const makes = Object.keys(carData);
   const models = make ? Object.keys(carData[make]) : [];
-  const years = make && model ? Object.keys(carData[make][model]) : [];
-  const fuelTypes = make && model && year ? carData[make][model][parseInt(year, 10)] : [];
+
+  const fuelTypes = useMemo(() => {
+    if (make && model && carData[make]?.[model]) {
+        const allFuelTypes = Object.values(carData[make][model]).flat();
+        return [...new Set(allFuelTypes)]; // Get unique fuel types
+    }
+    return [];
+  }, [make, model]);
+
 
   const handleMakeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setMake(e.target.value);
     setModel('');
     setYear('');
     setFuelType('');
+    setYearError('');
   };
 
   const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setModel(e.target.value);
     setYear('');
     setFuelType('');
+    setYearError('');
   };
 
-  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setYear(e.target.value);
+    if (yearError) {
+        setYearError('');
+    }
     setFuelType('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Year validation
+    const parsedYear = parseInt(year, 10);
+    if (!year || isNaN(parsedYear) || parsedYear < 1970 || parsedYear > 2025) {
+        setYearError('Please enter a valid year between 1970 and 2025.');
+        return;
+    }
+    setYearError(''); // Clear error if valid
+
     if (make && model && year && odometer && fuelType) {
       onSubmit({ make, model, year, odometer, fuelType });
     }
   };
 
   return (
-    <div className="relative flex-grow flex items-center justify-center bg-slate-100 dark:bg-slate-900 p-4 overflow-y-auto transition-colors duration-300">
+    <div className="relative flex-grow flex items-center justify-center bg-slate-100 dark:bg-slate-900 bg-gradient-to-br from-slate-50 to-slate-200 dark:from-slate-800 dark:to-slate-900 p-4 overflow-y-auto transition-colors duration-300">
         <button
           onClick={onOpenSettings}
-          className="absolute top-4 left-4 p-3 bg-slate-200 dark:bg-slate-800 rounded-full text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-300 dark:hover:bg-slate-700 transition-all border border-slate-300 dark:border-slate-700"
+          className="absolute top-4 left-4 p-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all border border-slate-300/50 dark:border-slate-700/50"
           aria-label="Open settings"
         >
           <SettingsIcon className="w-6 h-6" />
@@ -70,7 +92,7 @@ const CarDetailsForm: React.FC<CarDetailsFormProps> = ({ onSubmit, onOpenSetting
       
 
       <div className="w-full max-w-lg">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700">
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700/50">
             <div className="text-center mb-8">
                 <WrenchIcon className="w-16 h-16 text-amber-400 mx-auto mb-4"/>
                 <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Virtual Mechanic AI</h1>
@@ -87,12 +109,19 @@ const CarDetailsForm: React.FC<CarDetailsFormProps> = ({ onSubmit, onOpenSetting
                     {models.map((m) => <option key={m} value={m}>{m}</option>)}
                 </SelectField>
                 
-                <SelectField label="Model Year" value={year} onChange={handleYearChange} disabled={!model}>
-                    <option value="" disabled>Select Year</option>
-                    {years.map((y) => <option key={y} value={y}>{y}</option>)}
-                </SelectField>
-                
-                <SelectField label="Fuel Type" value={fuelType} onChange={(e) => setFuelType(e.target.value)} disabled={!year}>
+                <div>
+                    <InputField 
+                        label="Model Year" 
+                        value={year} 
+                        onChange={handleYearChange} 
+                        type="number" 
+                        placeholder="e.g., 2021" 
+                        disabled={!model} 
+                    />
+                    {yearError && <p className="text-sm text-red-500 dark:text-red-400 mt-1 px-1">{yearError}</p>}
+                </div>
+
+                <SelectField label="Fuel Type" value={fuelType} onChange={(e) => setFuelType(e.target.value)} disabled={!model}>
                     <option value="" disabled>Select Fuel Type</option>
                     {fuelTypes.map((f) => <option key={f} value={f}>{f}</option>)}
                 </SelectField>

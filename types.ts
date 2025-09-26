@@ -36,11 +36,9 @@ export interface ChatSession {
 
 // App personalization settings
 export type Theme = 'light' | 'dark' | 'system';
-export type FontSize = 'text-sm' | 'text-base' | 'text-lg';
 
 export interface Settings {
     theme: Theme;
-    fontSize: FontSize;
 }
 
 

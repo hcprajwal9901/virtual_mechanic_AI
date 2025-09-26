@@ -37,12 +37,19 @@
     <script>
       // Prevents Flash of Unstyled Content (FOUC) for dark mode
       (function() {
-        const theme = localStorage.getItem('virtualMechanicTheme') || 'system';
-        const fontSize = localStorage.getItem('virtualMechanicFontSize') || 'text-base';
+        let settings;
+        try {
+          settings = JSON.parse(localStorage.getItem('virtualMechanicSettings'));
+        } catch(e) {
+          settings = null;
+        }
+        const theme = settings?.theme || 'system';
+        
         if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark');
         }
-        document.documentElement.classList.add(fontSize);
+        // Set the default font size to small ('text-sm')
+        document.documentElement.classList.add('text-sm');
       })();
     </script>
   <script type="importmap">

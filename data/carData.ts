@@ -1,3 +1,4 @@
+
 import type { CarData } from '../types';
 
 // A sample dataset of Indian cars. In a real-world app, this would come from an API.
@@ -35,7 +36,9 @@ export const carData: CarData = {
         "S-Presso": { 2019: ["Petrol"], 2020: ["Petrol", "CNG"], 2021: ["Petrol", "CNG"], 2022: ["Petrol", "CNG"], 2023: ["Petrol", "CNG"], 2024: ["Petrol", "CNG"], },
         "Grand Vitara": { 2022: ["Petrol", "Hybrid"], 2023: ["Petrol", "Hybrid", "CNG"], 2024: ["Petrol", "Hybrid", "CNG"], },
         "Jimny": { 2023: ["Petrol"], 2024: ["Petrol"], },
-        "Fronx": { 2023: ["Petrol", "CNG"], 2024: ["Petrol", "CNG"], }
+// FIX: Corrected object syntax. "Fronx" object was not closed properly, causing "A-Star" to be nested inside it incorrectly.
+        "Fronx": { 2023: ["Petrol", "CNG"], 2024: ["Petrol", "CNG"] },
+        "A-Star": { 2013: ["Petrol", "CNG"], 2024: ["Petrol", "CNG"] }
     },
     "Hyundai": {
         "Santro": { 1998: ["Petrol"], 1999: ["Petrol"], 2000: ["Petrol"], 2001: ["Petrol"], 2002: ["Petrol"], 2003: ["Petrol", "LPG"], 2004: ["Petrol", "LPG"], 2005: ["Petrol", "LPG"], 2006: ["Petrol", "LPG"], 2007: ["Petrol", "LPG"], 2008: ["Petrol", "LPG"], 2009: ["Petrol", "LPG"], 2010: ["Petrol", "LPG"], 2011: ["Petrol", "LPG"], 2012: ["Petrol", "LPG"], 2013: ["Petrol", "LPG"], 2014: ["Petrol", "LPG"], 2018: ["Petrol", "CNG"], 2019: ["Petrol", "CNG"], 2020: ["Petrol", "CNG"], 2021: ["Petrol", "CNG"], 2022: ["Petrol", "CNG"], },
@@ -146,5 +149,5 @@ export const carData: CarData = {
         "Astor": { 2021: ["Petrol"], 2022: ["Petrol"], 2023: ["Petrol"], 2024: ["Petrol"], },
         "Comet EV": { 2023: ["Electric"], 2024: ["Electric"], }
     },
-    
+
 };

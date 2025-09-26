@@ -43,54 +43,115 @@ const ToolIcon = () => (
 
 // Renders markdown-like text from the model into styled HTML.
 const SimpleMarkdownRenderer: React.FC<{ text: string }> = ({ text }) => {
-    const renderHtml = () => {
-        const lines = text.split('\n');
+    const renderHtml = (inputText: string) => {
+        const lines = inputText.split('\n');
         let html = '';
-        let inUl = false;
-        let inOl = false;
+        let i = 0;
 
-        const closeLists = () => {
-            if (inUl) { html += '</ul>'; inUl = false; }
-            if (inOl) { html += '</ol>'; inOl = false; }
+        const escapeHtml = (unsafe: string) => {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         };
 
-        lines.forEach(line => {
-            const isUlItem = line.startsWith('* ') || line.startsWith('- ');
-            const isOlItem = line.match(/^\d+\.\s/);
-            const isHeading = line.startsWith('#');
-            const isEmpty = line.trim() === '';
+        const processInlines = (line: string) => {
+            return line
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/`([^`]+)`/g, '<code class="bg-slate-200 dark:bg-slate-600/50 px-1.5 py-0.5 rounded-md font-mono text-sm">$1</code>')
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline">$1</a>');
+        };
 
-            // If the line is not a list item, but we were in a list, close it.
-            if (!isUlItem && inUl) closeLists();
-            if (!isOlItem && inOl) closeLists();
-            
-            if (isHeading) {
-                if (line.startsWith('### ')) { html += `<h3>${line.substring(4)}</h3>`; }
-                else if (line.startsWith('## ')) { html += `<h2>${line.substring(3)}</h2>`; }
-                else if (line.startsWith('# ')) { html += `<h1>${line.substring(2)}</h1>`; }
-            } else if (isUlItem) {
-                if (!inUl) { html += '<ul>'; inUl = true; }
-                html += `<li>${line.substring(2)}</li>`;
-            } else if (isOlItem) {
-                if (!inOl) { html += '<ol>'; inOl = true; }
-                html += `<li>${line.replace(/^\d+\.\s/, '')}</li>`;
-            } else if (!isEmpty) {
-                html += `<p>${line}</p>`;
+        while (i < lines.length) {
+            const line = lines[i];
+
+            // Code Blocks
+            if (line.startsWith('```')) {
+                let codeBlockContent = '';
+                i++; // Move past the opening ```
+                while (i < lines.length && !lines[i].startsWith('```')) {
+                    codeBlockContent += lines[i] + '\n';
+                    i++;
+                }
+                html += `<pre><code class="block whitespace-pre-wrap bg-slate-200 dark:bg-slate-900/50 p-4 rounded-md text-sm font-mono">${escapeHtml(codeBlockContent.trimEnd())}</code></pre>`;
+                i++; // Skip the closing ```
+                continue;
             }
-        });
 
-        closeLists(); // Close any lists at the end of the text
+            // Headings
+            if (line.startsWith('### ')) {
+                html += `<h3>${processInlines(line.substring(4))}</h3>`;
+                i++;
+                continue;
+            }
+            if (line.startsWith('## ')) {
+                html += `<h2>${processInlines(line.substring(3))}</h2>`;
+                i++;
+                continue;
+            }
+            if (line.startsWith('# ')) {
+                html += `<h1>${processInlines(line.substring(2))}</h1>`;
+                i++;
+                continue;
+            }
 
-        // Inline replacements for bold, inline code, and links
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/`([^`]+)`/g, '<code class="bg-slate-200 dark:bg-slate-600/50 px-1.5 py-0.5 rounded-md">$1</code>');
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+            // Unordered Lists
+            if (line.startsWith('* ') || line.startsWith('- ')) {
+                html += '<ul>';
+                while (i < lines.length && (lines[i].startsWith('* ') || lines[i].startsWith('- '))) {
+                    html += `<li>${processInlines(lines[i].substring(2))}</li>`;
+                    i++;
+                }
+                html += '</ul>';
+                continue;
+            }
+
+            // Ordered Lists
+            if (line.match(/^\d+\.\s/)) {
+                html += '<ol>';
+                while (i < lines.length && lines[i].match(/^\d+\.\s/)) {
+                    html += `<li>${processInlines(lines[i].replace(/^\d+\.\s/, ''))}</li>`;
+                    i++;
+                }
+                html += '</ol>';
+                continue;
+            }
+            
+            // Paragraphs (group consecutive non-empty lines)
+            if (line.trim() !== '') {
+                let paraContent = '';
+                while (i < lines.length && lines[i].trim() !== '') {
+                    const currentLine = lines[i];
+                    // Check if this line starts a new block element type. If so, break the paragraph.
+                    if (
+                        currentLine.startsWith('```') ||
+                        currentLine.startsWith('# ') || currentLine.startsWith('## ') || currentLine.startsWith('### ') ||
+                        currentLine.startsWith('* ') || currentLine.startsWith('- ') ||
+                        currentLine.match(/^\d+\.\s/)
+                    ) {
+                        break;
+                    }
+                    paraContent += currentLine + '\n';
+                    i++;
+                }
+                if (paraContent.trim() !== '') {
+                    // Use <br> for intentional line breaks within a paragraph block
+                    html += `<p>${processInlines(paraContent.trim().replace(/\n/g, '<br />'))}</p>`;
+                }
+                continue;
+            }
+
+            // If it is a blank line, just advance the index.
+            i++;
+        }
 
         return html;
     };
     
     // Use dangerouslySetInnerHTML as we trust the source (Gemini API) and need to render HTML.
-    return <div dangerouslySetInnerHTML={{ __html: renderHtml() }} />;
+    return <div dangerouslySetInnerHTML={{ __html: renderHtml(text) }} />;
 };
 
 

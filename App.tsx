@@ -4,11 +4,12 @@ import type { CarDetails, ChatMessage, MediaData, ChatSession, Settings, Theme }
 import { MessageAuthor } from './types';
 import CarDetailsForm from './components/CarDetailsForm';
 import ChatInterface from './components/ChatInterface';
-import SettingsModal from './components/SETTINGSMODAL';
+import SettingsModal from './components/SettingsModal';
 
 // Define keys for localStorage
 const SESSIONS_KEY = 'virtualMechanicSessions';
 const SETTINGS_KEY = 'virtualMechanicSettings';
+const GARAGE_KEY = 'virtualMechanicGarage';
 
 const App: React.FC = () => {
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
@@ -21,13 +22,26 @@ const App: React.FC = () => {
     }
   });
 
+  const [garage, setGarage] = useState<CarDetails[]>(() => {
+    try {
+      const saved = localStorage.getItem(GARAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+        console.error("Failed to parse garage from localStorage", error);
+        return [];
+    }
+  });
+
   const [settings, setSettings] = useState<Settings>(() => {
     try {
         const saved = localStorage.getItem(SETTINGS_KEY);
-        return saved ? JSON.parse(saved) : { theme: 'system', fontSize: 'text-base' };
+        const parsedSettings = saved ? JSON.parse(saved) : { theme: 'system' };
+        // Ensure no legacy fontSize property exists
+        const { fontSize, ...rest } = parsedSettings;
+        return { theme: 'system', ...rest }; // Default theme if not present
     } catch (error) {
         console.error("Failed to parse settings from localStorage", error);
-        return { theme: 'system', fontSize: 'text-base' };
+        return { theme: 'system' };
     }
   });
 
@@ -35,6 +49,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [addCarFlow, setAddCarFlow] = useState(false); // Flag to track if we're adding a car to the garage
   const chatRef = useRef<Chat | null>(null);
 
   // Derive current session details from the sessions array
@@ -53,6 +68,15 @@ const App: React.FC = () => {
       console.error("Failed to save sessions to localStorage", error);
     }
   }, [sessions]);
+  
+  // Effect to save garage to localStorage when it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(GARAGE_KEY, JSON.stringify(garage));
+    } catch (error) {
+      console.error("Failed to save garage to localStorage", error);
+    }
+  }, [garage]);
 
   // Effect to save settings to localStorage and apply them to the DOM
   useEffect(() => {
@@ -68,14 +92,20 @@ const App: React.FC = () => {
               root.classList.add('light');
           }
 
-          // Apply font size
-          root.classList.remove('text-sm', 'text-base', 'text-lg');
-          root.classList.add(settings.fontSize);
-
+          // Font size is now handled by index.html and a default class.
       } catch (error) {
           console.error("Failed to save settings", error);
       }
   }, [settings]);
+  
+  // Effect to ensure the current session ID is valid after sessions change.
+  // This robustly handles cases where the active session is deleted.
+  useEffect(() => {
+    if (currentSessionId && !sessions.some(s => s.id === currentSessionId)) {
+      setCurrentSessionId(null);
+      chatRef.current = null;
+    }
+  }, [sessions, currentSessionId]);
   
   const getSystemInstruction = (details: CarDetails) => `
 You are "Virtual Mechanic", an expert AI assistant specializing in DIY car diagnosis, repair, and maintenance for cars sold in India from 1970 to the present day. This includes all major brands like Maruti Suzuki, Tata Motors, Mahindra & Mahindra, Hyundai, Toyota, Honda, etc.
@@ -97,12 +127,15 @@ Your primary role is to provide the most accurate, up-to-date, and safe advice. 
         3.  **Contextualize:** Directly relate your visual findings to the user's text query. If they ask to identify a part, focus on that. If they mention a problem, use the photo to confirm or deny it.
     *   **For Audio:** When a user uploads a recording, analyze the sound. Describe its characteristics (e.g., "a high-pitched squeal," "a rhythmic clicking," "a deep grinding noise") and suggest potential causes based on when the sound occurs.
     *   **You MUST incorporate your findings from the media into your overall diagnosis.**
-3.  **One-at-a-Time Diagnostic Questions:** If a user's query is about diagnosing a specific problem (e.g., "my car won't start," "there's a weird noise"), you MUST initiate a strict, one-at-a-time diagnostic questioning process before providing a solution. Do not give a diagnosis until you have gathered sufficient information. Follow this sequence precisely, asking only ONE question and waiting for the user's response before proceeding to the next:
-    *   **Step 1: Symptoms:** Start by asking for a detailed description of all symptoms. (e.g., "To get started, could you describe all the symptoms you're noticing in as much detail as possible?") Wait for the user's answer.
-    *   **Step 2: Context & Conditions:** After the user describes the symptoms, ask when the problem occurs. (e.g., "Thanks. Now, could you tell me when this issue happens? Is it constant, or does it only occur when starting the car, accelerating, turning, or braking?") Wait for the user's answer.
-    *   **Step 3: Warnings & Messages:** After the user provides context, ask about any dashboard warning lights or messages. (e.g., "Got it. Are there any warning lights on the dashboard, like the 'Check Engine' light?") Wait for the user's answer.
-    *   **Step 4: Recent History:** Finally, after getting information on warnings, ask about recent repairs or events. (e.g., "Okay. And has the car had any maintenance or repairs done recently, just before this issue started?") Wait for the user's answer.
-    *   **Only after completing all four steps** should you analyze the information and proceed with a diagnosis or suggestion.
+3.  **Contextual Diagnostic Questioning:** If a user's query is about diagnosing a specific problem (e.g., "my car won't start," "there's a weird noise"), you MUST ask clarifying questions one at a time to gather sufficient information before providing a solution. Do not jump to a diagnosis. Your questions should be logical follow-ups based on the user's statements.
+    *   **Analyze the User's Input:** Carefully read the user's description of the problem.
+    *   **Ask the Most Relevant Question Next:** Based on their input, formulate a single, targeted question to narrow down the possibilities.
+    *   **Wait for the Answer:** Wait for the user to respond before asking another question.
+    *   **Example Scenarios:**
+        *   If the user says, **"My car is making a squealing noise,"** a good follow-up question would be, *"When do you hear the squealing noise? Is it when you start the car, when you turn the steering wheel, or when you apply the brakes?"*
+        *   If the user says, **"My car won't start,"** a good first question would be, *"When you turn the key, what happens? Do you hear a clicking sound, does the engine crank slowly, or is there no sound at all?"*
+        *   If the user says, **"The check engine light is on,"** a logical next question would be, *"Have you noticed any other symptoms along with the light, like poor performance, strange noises, or smoke?"*
+    *   **Continue this process** for a few turns until you have a clear picture of the issue. Only then should you provide a diagnosis or suggest next steps.
 4.  **DIY Confirmation:** When a specific repair is identified, you must first ask the user if they wish to perform it themselves. Use the special format \`[PROMPT_BUTTONS]Your question here.|Affirmative answer.|Negative answer.\`
     *   Example: \`[PROMPT_BUTTONS]The issue seems to be a faulty spark plug, which is an easy repair. Would you like a step-by-step guide to replace it yourself?|Yes, show me how.|No, I'd rather not.\`
     *   DO NOT provide repair steps until the user responds positively. If the user selects the negative option, advise them to consult a professional mechanic.
@@ -171,17 +204,29 @@ Your primary role is to provide the most accurate, up-to-date, and safe advice. 
   }, [currentSession, initializeChat]); // Depend on the derived session object
 
   const handleCarDetailsSubmit = useCallback(async (details: CarDetails) => {
+    // If this submission came from the "Add Car" flow, add the car to the garage.
+    if (addCarFlow) {
+        const isDuplicate = garage.some(car => 
+            car.make === details.make && 
+            car.model === details.model && 
+            car.year === details.year
+        );
+        if (!isDuplicate) {
+            setGarage(prev => [...prev, details]);
+        }
+        setAddCarFlow(false); // Reset the flow flag
+    }
+
     const newSession: ChatSession = {
         id: Date.now().toString(),
         carDetails: details,
         chatHistory: [],
         lastUpdated: Date.now()
     };
-    // Add the new session to the beginning of the array
+    
     setSessions(prev => [newSession, ...prev]);
     setCurrentSessionId(newSession.id);
-    // initializeChat will be called by the useEffect that watches currentSession
-  }, []);
+  }, [addCarFlow, garage]);
   
   const handleSelectSession = (sessionId: string) => {
     setCurrentSessionId(sessionId);
@@ -228,6 +273,7 @@ Your primary role is to provide the most accurate, up-to-date, and safe advice. 
         parts.push({
           inlineData: {
             data: media.data,
+            // FIX: Corrected property name from mediaType to mimeType to match the MediaData interface.
             mimeType: media.mimeType,
           }
         });
@@ -274,18 +320,45 @@ Your primary role is to provide the most accurate, up-to-date, and safe advice. 
   
   const handleClearHistory = () => {
       setSessions([]);
+      // Do not clear the garage, only sessions
       setCurrentSessionId(null);
       chatRef.current = null;
       setIsSettingsModalOpen(false);
   };
   
-  const handleDeleteSession = (sessionIdToDelete: string) => {
+  const handleDeleteSession = useCallback((sessionIdToDelete: string) => {
     setSessions(prev => prev.filter(s => s.id !== sessionIdToDelete));
-    if (currentSessionId === sessionIdToDelete) {
-        setCurrentSessionId(null);
-        chatRef.current = null;
-    }
+  }, []);
+
+  // Triggered by the "+" button in the garage
+  const handleAddNewCar = () => {
+      setAddCarFlow(true); // Set the flag to add the next car to the garage
+      handleNewDiagnosis();
+      setIsSettingsModalOpen(false);
   };
+  
+  // Triggered by deleting a car from the garage list
+  const handleDeleteCar = useCallback((carToDelete: CarDetails) => {
+    // 1. Remove car from the garage
+    setGarage(prevGarage => prevGarage.filter(car => 
+        !(car.make === carToDelete.make &&
+          car.model === carToDelete.model &&
+          car.year === carToDelete.year)
+    ));
+    // 2. Remove all sessions associated with that car
+    setSessions(prevSessions => prevSessions.filter(session => 
+        !(session.carDetails.make === carToDelete.make &&
+          session.carDetails.model === carToDelete.model &&
+          session.carDetails.year === carToDelete.year)
+    ));
+  }, []);
+  
+  // Triggered by clicking a car in the garage to start a new chat
+  const handleStartDiagnosisFromGarage = (details: CarDetails) => {
+    handleCarDetailsSubmit(details);
+    setIsSettingsModalOpen(false);
+  };
+
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
@@ -311,9 +384,14 @@ Your primary role is to provide the most accurate, up-to-date, and safe advice. 
             settings={settings}
             onSettingsChange={setSettings}
             sessions={sessions}
+            garage={garage}
             onSessionSelect={handleSelectSession}
             onClearHistory={handleClearHistory}
             onDeleteSession={handleDeleteSession}
+            onAddNewCar={handleAddNewCar}
+            onDeleteCar={handleDeleteCar}
+            onStartDiagnosisFromGarage={handleStartDiagnosisFromGarage}
+            isInitialSetup={!currentSession}
         />
     </div>
   );
