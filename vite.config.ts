@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
 
   return {
-    // IMPORTANT: change this to your exact repo name (case-sensitive)
+    // IMPORTANT for GitHub Pages
     base: '/virtual_mechanic_AI/',
 
     server: {
@@ -18,9 +18,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
 
     define: {
-      // keep your env expose lines (Vite replaces these at build time)
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      // expose your API key to the front-end
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
     },
 
     resolve: {
