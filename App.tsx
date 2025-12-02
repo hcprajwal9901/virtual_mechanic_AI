@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import type { CarDetails, ChatMessage, MediaData, ChatSession, Settings, Theme } from './types';
+import type { CarDetails, ChatMessage, MediaData, ChatSession, Settings } from './types';
 import { MessageAuthor } from './types';
+
 import CarDetailsForm from './components/CarDetailsForm';
 import ChatInterface from './components/ChatInterface';
 import SettingsModal from './components/SettingsModal';
@@ -13,39 +14,44 @@ const GARAGE_KEY = 'virtualMechanicGarage';
 
 const App: React.FC = () => {
 
-  // Load stored sessions, garage, settings
+  // ----------------------------------------------
+  //  ✔ FIXED — API KEY LOADING
+  // ----------------------------------------------
+  const API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+
+  // ----------------------------------------------
+  // STATE
+  // ----------------------------------------------
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     try {
-      const saved = localStorage.getItem(SESSIONS_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
+      return JSON.parse(localStorage.getItem(SESSIONS_KEY) || "[]");
+    } catch {
+      return [];
+    }
   });
 
   const [garage, setGarage] = useState<CarDetails[]>(() => {
     try {
-      const saved = localStorage.getItem(GARAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
+      return JSON.parse(localStorage.getItem(GARAGE_KEY) || "[]");
+    } catch {
+      return [];
+    }
   });
 
   const [settings, setSettings] = useState<Settings>(() => {
     try {
-      const saved = localStorage.getItem(SETTINGS_KEY);
-      const parsed = saved ? JSON.parse(saved) : { theme: 'system' };
-      const { fontSize, ...rest } = parsed;
-      return { theme: 'system', ...rest };
-    } catch { return { theme: 'system' }; }
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      return { theme: saved.theme || "system" };
+    } catch {
+      return { theme: "system" };
+    }
   });
 
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [addCarFlow, setAddCarFlow] = useState(false);
-
-  // IMPORTANT — API KEY FIX 🔥
-  // This ensures GitHub Pages production build works.
-  const API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY;
 
   const chatRef = useRef<any>(null);
 
@@ -57,89 +63,109 @@ const App: React.FC = () => {
   const carDetails = currentSession?.carDetails;
   const chatHistory = currentSession?.chatHistory;
 
-  // Save local data
-  useEffect(() => localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions)), [sessions]);
-  useEffect(() => localStorage.setItem(GARAGE_KEY, JSON.stringify(garage)), [garage]);
+  // ----------------------------------------------
+  // Sync localStorage
+  // ----------------------------------------------
+  useEffect(() => {
+    localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+  }, [sessions]);
+
+  useEffect(() => {
+    localStorage.setItem(GARAGE_KEY, JSON.stringify(garage));
+  }, [garage]);
 
   useEffect(() => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+
     const root = document.documentElement;
-    root.classList.remove("dark", "light");
-    if (settings.theme === "dark" || (settings.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-      root.classList.add("dark");
-    } else root.classList.add("light");
+    root.classList.remove("light", "dark");
+
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const useDark = settings.theme === "dark" || (settings.theme === "system" && prefersDark);
+
+    root.classList.add(useDark ? "dark" : "light");
   }, [settings]);
 
-  // SYSTEM PROMPT
+  // ----------------------------------------------
+  // System Prompt
+  // ----------------------------------------------
   const getSystemInstruction = (details: CarDetails) => `
-You are Virtual Mechanic — an AI expert for diagnosing cars in India.
+You are Virtual Mechanic — an AI expert for diagnosing Indian vehicles.
 
 Car Details:
 Make: ${details.make}
 Model: ${details.model}
 Year: ${details.year}
-Fuel: ${details.fuelType}
+Fuel Type: ${details.fuelType}
 Odometer: ${details.odometer}
 `;
 
-  // Initialize chat with API KEY FIX
-  const initializeChat = useCallback(async (details: CarDetails, history: ChatMessage[]) => {
-    setIsLoading(true);
-    setError(null);
-    chatRef.current = null;
+  // ----------------------------------------------
+  // Initialize Chat
+  // ----------------------------------------------
+  const initializeChat = useCallback(
+    async (details: CarDetails, history: ChatMessage[]) => {
+      setIsLoading(true);
+      setError(null);
+      chatRef.current = null;
 
-    try {
-      if (!API_KEY) throw new Error("API key missing.");
+      try {
+        if (!API_KEY) {
+          throw new Error("API key missing. Add VITE_GEMINI_API_KEY to your .env file.");
+        }
 
-      const ai = new GoogleGenerativeAI(API_KEY);
+        const ai = new GoogleGenerativeAI(API_KEY);
 
-      const sdkHistory = history
-        .map(msg => {
-          const role = msg.author === MessageAuthor.USER ? "user" : "model";
-          const parts: any[] = [];
-          if (msg.text) parts.push({ text: msg.text });
-          if (msg.media) parts.push({
-            inlineData: {
-              data: msg.media.data,
-              mimeType: msg.media.mimeType
+        const sdkHistory = history
+          .map(msg => {
+            const role = msg.author === MessageAuthor.USER ? "user" : "model";
+            const parts: any[] = [];
+            if (msg.text) parts.push({ text: msg.text });
+
+            if (msg.media) {
+              parts.push({
+                inlineData: {
+                  data: msg.media.data,
+                  mimeType: msg.media.mimeType,
+                },
+              });
             }
-          });
-          return { role, parts };
-        })
-        .filter(h => h.parts.length > 0);
 
-      // startChat is not declared on the library's TS types; cast to any to call it
-      const chat = (ai as any).startChat({
-        model: "gemini-2.5-flash",
-        history: sdkHistory,
-        systemInstruction: getSystemInstruction(details),
-        tools: [{ googleSearch: {} }]
-      });
+            return { role, parts };
+          })
+          .filter(h => h.parts.length > 0);
 
-      chatRef.current = chat;
+        const chat = (ai as any).startChat({
+          model: "gemini-2.5-flash",
+          history: sdkHistory,
+          systemInstruction: getSystemInstruction(details),
+          tools: [{ googleSearch: {} }],
+        });
 
-      if (history.length === 0) {
-        const welcome: ChatMessage = {
-          author: MessageAuthor.MODEL,
-          text: `Hello! I'm your Virtual Mechanic. How can I help with your ${details.year} ${details.make} ${details.model}?`,
-        };
+        chatRef.current = chat;
 
-        setSessions(prev =>
-          prev.map(s =>
-            s.id === currentSessionId
-              ? { ...s, chatHistory: [welcome], lastUpdated: Date.now() }
-              : s
-          )
-        );
+        if (history.length === 0) {
+          const welcome: ChatMessage = {
+            author: MessageAuthor.MODEL,
+            text: `Hello! I'm your Virtual Mechanic. How can I help with your ${details.year} ${details.make} ${details.model}?`,
+          };
+
+          setSessions(prev =>
+            prev.map(s =>
+              s.id === currentSessionId
+                ? { ...s, chatHistory: [welcome], lastUpdated: Date.now() }
+                : s
+            )
+          );
+        }
+      } catch (err: any) {
+        setError("Chat setup failed: " + err.message);
+      } finally {
+        setIsLoading(false);
       }
-
-    } catch (e: any) {
-      setError("Chat setup failed: " + e.message);
-    } finally {
-      setIsLoading(false);
-    }
-
-  }, [currentSessionId, API_KEY]);
+    },
+    [API_KEY, currentSessionId]
+  );
 
   useEffect(() => {
     if (currentSession) {
@@ -147,69 +173,81 @@ Odometer: ${details.odometer}
     }
   }, [currentSession, initializeChat]);
 
-  // Send message
-  const handleSendMessage = useCallback(async (text: string, media?: MediaData) => {
-    if (!chatRef.current) return setError("Chat not initialized.");
-    if (!currentSessionId) return;
-
-    const userMessage: ChatMessage = { author: MessageAuthor.USER, text, media };
-
-    const updateHistory = (fn: (prev: ChatMessage[]) => ChatMessage[]) => {
-      setSessions(prev =>
-        prev
-          .map(s =>
-            s.id === currentSessionId
-              ? { ...s, chatHistory: fn(s.chatHistory), lastUpdated: Date.now() }
-              : s
-          )
-          .sort((a, b) => b.lastUpdated - a.lastUpdated)
-      );
-    };
-
-    updateHistory(prev => [...prev, userMessage]);
-    setIsLoading(true);
-
-    try {
-      const parts: any[] = [{ text }];
-      if (media) {
-        parts.push({
-          inlineData: {
-            data: media.data,
-            mimeType: media.mimeType
-          }
-        });
+  // ----------------------------------------------
+  // Handle Message Send
+  // ----------------------------------------------
+  const handleSendMessage = useCallback(
+    async (text: string, media?: MediaData) => {
+      if (!chatRef.current) {
+        return setError("Chat not ready.");
       }
 
-      const stream = await chatRef.current.sendMessageStream(parts);
+      if (!currentSessionId) return;
 
-      const modelMessage: ChatMessage = {
-        author: MessageAuthor.MODEL,
-        text: "",
-        sources: [],
+      const userMessage: ChatMessage = {
+        author: MessageAuthor.USER,
+        text,
+        media,
       };
 
-      updateHistory(prev => [...prev, modelMessage]);
+      const updateHistory = (fn: (prev: ChatMessage[]) => ChatMessage[]) => {
+        setSessions(prev =>
+          prev
+            .map(s =>
+              s.id === currentSessionId
+                ? { ...s, chatHistory: fn(s.chatHistory), lastUpdated: Date.now() }
+                : s
+            )
+            .sort((a, b) => b.lastUpdated - a.lastUpdated)
+        );
+      };
 
-      for await (const chunk of stream) {
-        const chunkText = chunk.text ?? "";
-        updateHistory(prev => {
-          const newHist = [...prev];
-          newHist[newHist.length - 1].text += chunkText;
-          return newHist;
-        });
+      updateHistory(prev => [...prev, userMessage]);
+      setIsLoading(true);
+
+      try {
+        const parts: any[] = [{ text }];
+        if (media) {
+          parts.push({
+            inlineData: {
+              data: media.data,
+              mimeType: media.mimeType,
+            },
+          });
+        }
+
+        const stream = await chatRef.current.sendMessageStream(parts);
+
+        const modelMessage: ChatMessage = {
+          author: MessageAuthor.MODEL,
+          text: "",
+        };
+
+        updateHistory(prev => [...prev, modelMessage]);
+
+        for await (const chunk of stream) {
+          const chunkText = chunk.text || "";
+          updateHistory(prev => {
+            const newHist = [...prev];
+            newHist[newHist.length - 1].text += chunkText;
+            return newHist;
+          });
+        }
+      } catch (error: any) {
+        updateHistory(prev => [
+          ...prev,
+          { author: MessageAuthor.MODEL, text: "Error: " + error.message },
+        ]);
+      } finally {
+        setIsLoading(false);
       }
+    },
+    [currentSessionId]
+  );
 
-    } catch (e: any) {
-      updateHistory(prev => [
-        ...prev,
-        { author: MessageAuthor.MODEL, text: "Error: " + e.message },
-      ]);
-
-    } finally { setIsLoading(false); }
-
-  }, [currentSessionId]);
-
-  // Session controls
+  // ----------------------------------------------
+  // Create New Chat Session
+  // ----------------------------------------------
   const handleCarDetailsSubmit = (details: CarDetails) => {
     if (addCarFlow) {
       const exists = garage.some(
@@ -230,8 +268,16 @@ Odometer: ${details.odometer}
     setCurrentSessionId(newSession.id);
   };
 
+  // ----------------------------------------------
+  // UI
+  // ----------------------------------------------
   return (
     <div className="w-full h-screen flex flex-col bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+      {!API_KEY && (
+        <div className="text-red-500 text-center p-2 bg-red-100">
+          API key missing — add VITE_GEMINI_API_KEY to your .env
+        </div>
+      )}
 
       {!currentSession || !carDetails ? (
         <CarDetailsForm
@@ -264,9 +310,12 @@ Odometer: ${details.odometer}
         }
         onAddNewCar={() => setAddCarFlow(true)}
         onDeleteCar={car =>
-          setGarage(prev => prev.filter(c =>
-            !(c.make === car.make && c.model === car.model && c.year === car.year)
-          ))
+          setGarage(prev =>
+            prev.filter(
+              c =>
+                !(c.make === car.make && c.model === car.model && c.year === car.year)
+            )
+          )
         }
         onStartDiagnosisFromGarage={handleCarDetailsSubmit}
         isInitialSetup={!currentSession}

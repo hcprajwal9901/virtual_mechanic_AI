@@ -1,31 +1,27 @@
 // vite.config.ts
-import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
+import path from "path";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', '');
+export default defineConfig({
+  // Important for GitHub Pages (matches repo name)
+  base: "/virtual_mechanic_AI/",
 
-  return {
-    // IMPORTANT for GitHub Pages
-    base: '/virtual_mechanic_AI/',
+  server: {
+    port: 3000,
+    host: "0.0.0.0",
+  },
 
-    server: {
-      port: 3000,
-      host: '0.0.0.0',
+  plugins: [react()],
+
+  define: {
+    // Prevent accidental leaking of process.env (fix for your earlier mistake)
+    "process.env": {},
+  },
+
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "."),
     },
-
-    plugins: [react()],
-
-    define: {
-      // expose your API key to the front-end
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
-    },
-
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
-    },
-  };
+  },
 });
