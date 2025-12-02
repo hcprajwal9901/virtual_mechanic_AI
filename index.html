@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Virtual Mechanic AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom scrollbar with CSS variables for theming */
+      :root {
+        --scrollbar-track: #e2e8f0; /* slate-200 */
+        --scrollbar-thumb: #94a3b8; /* slate-400 */
+        --scrollbar-thumb-hover: #64748b; /* slate-500 */
+        color-scheme: light;
+      }
+      html.dark {
+        --scrollbar-track: #1e293b; /* slate-800 */
+        --scrollbar-thumb: #475569; /* slate-600 */
+        --scrollbar-thumb-hover: #64748b; /* slate-500 */
+        color-scheme: dark;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover);
+      }
+    </style>
+    <script>
+      // Prevents Flash of Unstyled Content (FOUC) for dark mode
+      (function() {
+        let settings;
+        try {
+          settings = JSON.parse(localStorage.getItem('virtualMechanicSettings'));
+        } catch(e) {
+          settings = null;
+        }
+        const theme = settings?.theme || 'system';
+        
+        if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+        // Set the default font size to small ('text-sm')
+        document.documentElement.classList.add('text-sm');
+      })();
+    </script>
+
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/virtual_mechanic_AI/assets/index-BRTxARFX.js"></script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
